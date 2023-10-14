@@ -1,37 +1,21 @@
-import NextAuth, { NextAuthOptions } from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
-import FacebookProvider from 'next-auth/providers/facebook';
-import GithubProvider from 'next-auth/providers/github';
-import TwitterProvider from 'next-auth/providers/twitter';
-import Auth0Provider from 'next-auth/providers/auth0';
-
+import NextAuth, { NextAuthOptions } from 'next-auth'
+import PipedriveProvider from 'next-auth/providers/pipedrive' 
+import { config } from '../../../../auth';
+import { NextApiRequest, NextApiResponse } from 'next'
+import { readFileSync } from 'node:fs';
+import jwt from '../../../../auth';
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
+
+
 export const authOptions: NextAuthOptions = {
   // https://next-auth.js.org/configuration/providers/oauth
   providers: [
-    Auth0Provider({
-      clientId: process.env.AUTH0_ID,
-      clientSecret: process.env.AUTH0_SECRET,
-      issuer: process.env.AUTH0_ISSUER,
+    PipedriveProvider({
+      clientId: process.env.PIPEDRIVE_ID ,
+      clientSecret: process.env.PIPEDRIVE_SECRET,
     }),
-    FacebookProvider({
-      clientId: process.env.FACEBOOK_ID,
-      clientSecret: process.env.FACEBOOK_SECRET,
-    }),
-    GithubProvider({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
-    }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-    }),
-    TwitterProvider({
-      clientId: process.env.TWITTER_ID,
-      clientSecret: process.env.TWITTER_SECRET,
-      version: '2.0',
-    }),
+    
   ],
   callbacks: {
     async jwt({ token }) {
@@ -41,5 +25,45 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-const handler = NextAuth(authOptions);
+
+/**
+ * Handles authentication requests.
+ * @param {NextApiRequest} req - The incoming request object.
+ * @param {NextApiResponse} res - The outgoing response object.
+ * @returns {Promise<void>} - A Promise that resolves when authentication is complete.
+ */
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  req = forceSession(req); //set session properties accessToken,refreshToken, apiDomain and  on req.session 
+
+  return await NextAuth(req,res,config)
+
+} 
+
+/**
+ * Forces the session to be created and populated with the user's access token and refresh token.
+ * @param {NextApiRequest} req - The incoming request object.
+ */
+function forceSession(req: NextApiRequest) {
+  // Create a session if one does not already exist. 
+  //ONLY USE THIS FOR TESTING. SHOULD BE REMOVED FOR PRODUCTION ENVIRONMENT
+
+  if (!req.headers.authorization) {
+    // Set the session properties.
+    const tokenHolder = JSON.parse(readFileSync("/Users/jason/dev/pdwhapp/token.json", "utf8"));
+    req.headers.authorization = "Bearer " + tokenHolder.accessToken;
+    jwt(tokenHolder);
+    //req.headers.refresh_token = tokenHolder.refreshToken;
+    //req.headers.api_domain = tokenHolder.apiDomain;
+    //for each property in tokenHolder, console.log the property name and value
+    for (const [key, value] of Object.entries(tokenHolder)) {
+      console.log(`${key}: ${value}`);
+    }
+    return req;
+  }
+  return req;
+}
+
+
+
+
 export { handler as GET, handler as POST };

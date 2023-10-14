@@ -21,11 +21,16 @@
     "next": "^13.4.5",
     "next-auth": "latest",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "cookie-parser": "^1.4.6",
+    "cookie-session": "2.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.16.2",
     "@types/react": "^18.2.0",
-    "typescript": "^5.0.4"
+    "@types/cookie-parser": "^1.4.4",
+    "@types/cookie-session": "^2.0.0",
+    "typescript": "^5.0.4",
+    "@auth/core": "^0.16.0"
   }
 }
